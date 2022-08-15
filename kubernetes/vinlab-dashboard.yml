@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vinlab-dashboard-deployment
+spec:
+  selector:
+    matchLabels:
+      app: dashboard
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+        - name: vinlab-dashboard
+          image: vindr/vinlab-dashboard
+          env:
+            - name: PUBLIC_URL
+              value: /dashboard
+
+            - name: SERVER_BASE_URL
+              value: https://lab.deepmd.io
+
+            - name: MEDICAL_VIEWER_URL_PREFIX
+              value: /medical-view
+
+            - name: DASHBOARD_URL_PREFIX
+              value: /dashboard
+
+            - name: OIDC_CLIENT_ID
+              value: vinlab-frontend
+
+            - name: OIDC_AUTHORIZATION_URI
+              value: https://lab.deepmd.io/auth/realms/vinlab/protocol/openid-connect/auth
+
+            - name: OIDC_ACCESS_TOKEN_URI
+              value: https://lab.deepmd.io/auth/realms/vinlab/protocol/openid-connect/token
+
+            - name: OIDC_REDIRECT_URI
+              value: https://lab.deepmd.io/dashboard
+
+            - name: OIDC_LOGOUT_URI
+              value: https://lab.deepmd.io/auth/realms/vinlab/protocol/openid-connect/logout
+
+            - name: OIDC_USERINFO_ENDPOINT
+              value: https://lab.deepmd.io/auth/realms/vinlab/protocol/openid-connect/userinfo
+
+            - name: OIDC_AUDIENCE
+              value: "vinlab-backend"
+          ports:
+            - containerPort: 80
+              name: dashboard-port
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 3
+          imagePullPolicy: Always
+      imagePullSecrets:
+        - name: vindr-ecr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+spec:
+  selector:
+    app: dashboard
+  ports:
+    - port: 80
+      targetPort: 80
